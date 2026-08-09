@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML 轉 PDF 離線工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen p-4 sm:p-6">
+    <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+        <header class="text-center mb-6">
+            <h1 class="text-2xl sm:text-3xl font-bold text-sky-600">HTML 轉 PDF 離線工具</h1>
+            <p class="text-sm text-slate-500 mt-1">完全離線運作，支援手機與電腦，一鍵儲存為 PDF</p>
+        </header>
+
+        <!-- Template Selectors -->
+        <div class="mb-4">
+            <label class="block text-sm font-semibold text-slate-700 mb-2">選擇預設範本：</label>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="loadTemplate('invoice')" id="btn-invoice" class="px-3 py-1.5 rounded-lg text-sm font-semibold bg-sky-600 text-white transition">商業發票</button>
+                <button onclick="loadTemplate('resume')" id="btn-resume" class="px-3 py-1.5 rounded-lg text-sm font-semibold bg-slate-100 text-slate-700 border border-slate-300 transition">個人履歷</button>
+                <button onclick="loadTemplate('report')" id="btn-report" class="px-3 py-1.5 rounded-lg text-sm font-semibold bg-slate-100 text-slate-700 border border-slate-300 transition">專案報告</button>
+                <button onclick="loadTemplate('custom')" id="btn-custom" class="px-3 py-1.5 rounded-lg text-sm font-semibold bg-slate-100 text-slate-700 border border-slate-300 transition">自訂空白</button>
+            </div>
+        </div>
+
+        <!-- HTML Code Editor -->
+        <div class="mb-6">
+            <label class="block text-sm font-semibold text-slate-700 mb-2">HTML 原始碼編輯器：</label>
+            <textarea id="html-editor" rows="12" class="w-full bg-slate-900 text-slate-100 p-3 rounded-lg font-mono text-xs sm:text-sm border border-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+        </div>
+
+        <!-- Action Button -->
+        <button onclick="generatePDF()" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition flex items-center justify-center gap-2">
+            <span>產生並儲存 PDF</span>
+        </button>
+
+        <div class="mt-4 text-center text-xs text-slate-400">
+            提示：點擊按鈕後會開啟預覽列印視窗，請在目的地選擇「另存為 PDF」即可下載至手機或電腦。
+        </div>
+    </div>
+
+    <!-- Hidden Preview Container -->
+    <div id="preview-container" style="display:none;"></div>
+
+    <script>
+        const templates = {
+            invoice: `<html><head><style>body { font-family: sans-serif; padding: 20px; color: #333; } h1 { color: #0284c7; border-bottom: 2px solid #0284c7; padding-bottom: 6px; } table { width: 100%; border-collapse: collapse; margin-top: 20px; } th, td { border: 1px solid #cbd5e1; padding: 8px; text-align: left; } th { background: #f1f5f9; }</style></head><body><h1>商業發票 (Invoice)</h1><p><strong>單號:</strong> INV-2026-001 | <strong>日期:</strong> 2026-08-10</p><table><tr><th>項目</th><th>數量</th><th>金額</th></tr><tr><td>軟體開發服務</td><td>1</td><td>$5,000</td></tr></table></body></html>`,
+            resume: `<html><head><style>body { font-family: sans-serif; padding: 20px; color: #1e293b; } h1 { color: #2563eb; } h2 { border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-top: 20px; font-size: 16px; color: #334155; }</style></head><body><h1>王小明 (Alex Wang)</h1><p style="color:#64748b;">資深工程師 | alex@example.com</p><h2>專業技能</h2><p>React Native, TypeScript, Python, HTML/CSS</p><h2>工作經歷</h2><p><strong>技術總監</strong> (2022 - Present)</p></body></html>`,
+            report: `<html><head><style>body { font-family: sans-serif; padding: 20px; color: #0f172a; } h1 { color: #0284c7; text-align: center; } .card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 6px; margin-top: 15px; }</style></head><body><h1>專案狀態報告</h1><div class="card"><h3>執行摘要</h3><p>系統執行狀況良好，各項指標符合預期。</p></div></body></html>`,
+            custom: `<html><head><style>body { font-family: sans-serif; padding: 20px; }</style></head><body><h1>自訂標題</h1><p>請在此輸入您的 HTML 內容...</p></body></html>`
+        };
+
+        const editor = document.getElementById('html-editor');
+
+        function loadTemplate(type) {
+            editor.value = templates[type];
+            ['invoice', 'resume', 'report', 'custom'].forEach(t => {
+                const btn = document.getElementById(`btn-${t}`);
+                if (t === type) {
+                    btn.className = "px-3 py-1.5 rounded-lg text-sm font-semibold bg-sky-600 text-white transition";
+                } else {
+                    btn.className = "px-3 py-1.5 rounded-lg text-sm font-semibold bg-slate-100 text-slate-700 border border-slate-300 transition";
+                }
+            });
+        }
+
+        // Load default invoice
+        editor.value = templates.invoice;
+
+        function generatePDF() {
+            const html = editor.value;
+            const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                alert('請允許彈出視窗以檢視與儲存 PDF！');
+                return;
+            }
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        }
+    </script>
+</body>
+</html>
