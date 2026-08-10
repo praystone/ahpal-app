@@ -18,16 +18,15 @@ jobs:
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
-        # 不指定 version，讓它自動從 package.json 的 packageManager 欄位讀取
 
       - name: Install dependencies
         run: pnpm install
 
-      - name: Install Expo & EAS CLI
-        uses: expo/expo-github-action@v8
-        with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Install EAS CLI
+        run: pnpm install -g eas-cli
+
+      - name: Login to Expo
+        run: eas login --token ${{ secrets.EXPO_TOKEN }}
 
       - name: Build Android APK (Preview)
         run: eas build --platform android --profile preview --non-interactive
