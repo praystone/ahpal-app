@@ -1,0 +1,32 @@
+name: EAS Build via GitHub Actions
+
+on:
+  push:
+    branches: [ "main" ]  # 你可以改成 develop 或其他分支
+  pull_request:
+    branches: [ "main" ]  # 如果你想在 PR 時也觸發 build
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install Expo & EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Android APK (Preview)
+        run: eas build --platform android --profile preview --non-interactive
