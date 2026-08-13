@@ -1,3 +1,5 @@
+
+import * as Print from 'expo-print';
 import React, { useState } from "react";
 import {
   ScrollView,
@@ -121,45 +123,35 @@ export default function HomeScreen() {
     setHtmlContent(content);
   };
 
-  const handleGeneratePDF = async () => {
-    try {
-      setLoading(true);
+const handleGeneratePDF = async () => {
+  try {
+    setLoading(true);
 
-      if (Platform.OS === "web") {
-        const win = window.open("", "_blank");
-        if (win) {
-          win.document.write(htmlContent);
-          win.document.close();
-          win.print();
-        } else {
-          Alert.alert("提示", "請允許彈出視窗以預覽/列印 PDF。");
-        }
-        setLoading(false);
-        return;
-      }
+    // 使用 expo-print 直接生成 PDF
+    const { uri } = await Print.printToFileAsync({
+      html: htmlContent,
+      width: 612,   // A4 寬度（像素）
+      height: 792,  // A4 高度（像素）
+    });
 
-      // Robust FileSystem Caching + Sharing Mechanism (Zero Intent Length Limit, 100% Reliable on Android)
-      const fileUri = `${FileSystem.cacheDirectory}document_${Date.now()}.html`;
-      await FileSystem.writeAsStringAsync(fileUri, htmlContent, {
-        encoding: FileSystem.EncodingType.UTF8,
+    console.log('PDF 儲存路徑：', uri);
+    setLoading(false);
+
+    // 分享 PDF
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(uri, {
+        mimeType: 'application/pdf',
+        dialogTitle: '分享 PDF 檔案',
+        UTI: 'public.pdf',
       });
-
-      setLoading(false);
-
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(fileUri, {
-          mimeType: "text/html",
-          dialogTitle: "檢視或分享 HTML 文件",
-          UTI: "public.html",
-        });
-      } else {
-        Alert.alert("成功", `檔案已儲存至：\n${fileUri}`);
-      }
-    } catch (error: any) {
-      setLoading(false);
-      Alert.alert("錯誤", `處理失敗: ${error?.message || error}`);
+    } else {
+      Alert.alert('成功', `PDF 已儲存至：\n${uri}`);
     }
-  };
+  } catch (error: any) {
+    setLoading(false);
+    Alert.alert('錯誤', `PDF 生成失敗：${error?.message || error}`);
+  }
+};
 
   return (
     <ScreenContainer className="p-4 bg-background">
